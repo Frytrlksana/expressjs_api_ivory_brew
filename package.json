@@ -1,0 +1,44 @@
+{
+  "name": "ivory-brew-api",
+  "version": "1.0.0",
+  "description": "Backend REST API Ivory Brew Caffe",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "db:create": "node src/scripts/createPgDb.js",
+    "db:sync": "node src/scripts/syncDb.js",
+    "seed": "node src/seeders/seed.js",
+    "db:setup": "node src/scripts/createPgDb.js && node src/scripts/syncDb.js && node src/seeders/seed.js"
+  },
+  "keywords": [
+    "express",
+    "sequelize",
+    "pos",
+    "cafe",
+    "rest-api"
+  ],
+  "author": "Ivory Brew Dev Team",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.3.1",
+    "helmet": "^8.1.0",
+    "joi": "^18.0.2",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.10.1",
+    "mysql2": "^3.16.2",
+    "pg": "^8.19.0",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.7",
+    "sqlite3": "^6.0.1",
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

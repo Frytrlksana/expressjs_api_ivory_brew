@@ -1,0 +1,206 @@
+### ============================================================
+### IVORY BREW CAFFE REST API - HTTP REQUEST SAMPLES
+### Dapat dijalankan langsung dengan REST Client extension di VS Code / IDE
+### ============================================================
+
+@baseUrl = http://localhost:5050/api/v1
+@contentType = application/json
+
+### 1. Health Check
+GET {{baseUrl}}/health HTTP/1.1
+
+### ============================================================
+### AUTENTIKASI
+### ============================================================
+
+### 2. Login sebagai General Manager
+# @name loginManager
+POST {{baseUrl}}/auth/login HTTP/1.1
+Content-Type: {{contentType}}
+
+{
+  "email": "manager@ivorybrew.id",
+  "password": "IvoryBrew123!"
+}
+
+### Simpan token manager dari response
+@managerToken = {{loginManager.response.body.data.token}}
+
+### 3. Login sebagai Barista
+# @name loginBarista
+POST {{baseUrl}}/auth/login HTTP/1.1
+Content-Type: {{contentType}}
+
+{
+  "email": "barista@ivorybrew.id",
+  "password": "IvoryBrew123!"
+}
+
+@baristaToken = {{loginBarista.response.body.data.token}}
+
+### 4. Cek Profil Pengguna (Get Me)
+GET {{baseUrl}}/auth/me HTTP/1.1
+Authorization: Bearer {{managerToken}}
+
+### ============================================================
+### KATALOG PRODUK & BAHAN BAKU
+### ============================================================
+
+### 5. Dapatkan Daftar Produk
+# @name getProducts
+GET {{baseUrl}}/products?page=1&limit=10 HTTP/1.1
+Authorization: Bearer {{baristaToken}}
+
+@firstProductId = {{getProducts.response.body.data[0].id}}
+
+### 6. Dapatkan Bahan Baku & Cek Stok
+# @name getRawMaterials
+GET {{baseUrl}}/raw-materials?page=1&limit=20 HTTP/1.1
+Authorization: Bearer {{managerToken}}
+
+@firstMaterialId = {{getRawMaterials.response.body.data[0].id}}
+
+### 7. Buat Produk Baru (Manager)
+# @name createProduct
+POST {{baseUrl}}/products HTTP/1.1
+Authorization: Bearer {{managerToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Choco Mint Iced Frappe",
+  "category": "signature",
+  "price": 35000,
+  "cost_price": 14000,
+  "stock": 50,
+  "description": "Cokelat dingin dengan aroma mint segar",
+  "is_best_seller": false
+}
+
+### ============================================================
+### TRANSAKSI KASIR (CHECKOUT & PENGURANGAN STOK)
+### ============================================================
+
+### 8. Checkout Pesanan Kasir (Barista / POS)
+# Otomatis menghitung: subtotal, diskon, pajak 10% (PB1), kembalian uang cash,
+# Mengurangi stok bahan baku sesuai resep dan generate no struk IBC-YYYYMMDD-XXX
+# @name checkoutOrder
+POST {{baseUrl}}/orders HTTP/1.1
+Authorization: Bearer {{baristaToken}}
+Content-Type: {{contentType}}
+
+{
+  "order_type": "dine-in",
+  "table_number": "Meja 08",
+  "customer_name": "Pak Hendra",
+  "payment_method": "cash",
+  "discount": 5000,
+  "cash_given": 100000,
+  "items": [
+    {
+      "product_id": "{{firstProductId}}",
+      "quantity": 2,
+      "notes": "Less sweet, hot"
+    }
+  ]
+}
+
+@orderId = {{checkoutOrder.response.body.data.id}}
+
+### 9. Cek Detail Order Transaksi
+GET {{baseUrl}}/orders/{{orderId}} HTTP/1.1
+Authorization: Bearer {{baristaToken}}
+
+### 10. Batalkan Order (Stok Otomatis Dikembalikan)
+PATCH {{baseUrl}}/orders/{{orderId}}/cancel HTTP/1.1
+Authorization: Bearer {{managerToken}}
+
+### ============================================================
+### PENGADAAN BAHAN BAKU (PURCHASE ORDER)
+### ============================================================
+
+### 11. Buat Purchase Order (Status Lunas -> Otomatis Expense Terbentuk & Stok Bertambah)
+# @name createPO
+POST {{baseUrl}}/purchase-orders HTTP/1.1
+Authorization: Bearer {{managerToken}}
+Content-Type: {{contentType}}
+
+{
+  "supplier": "CV Kopi Nusantara Mandiri",
+  "date": "2026-11-21",
+  "status": "lunas",
+  "payment_method": "bank",
+  "notes": "Pengadaan rutin biji kopi arabika gayo",
+  "items": [
+    {
+      "material_id": "{{firstMaterialId}}",
+      "quantity": 10,
+      "unit": "kg",
+      "unit_price": 130000
+    }
+  ]
+}
+
+@poId = {{createPO.response.body.data.id}}
+
+### 12. Cek Detail Purchase Order
+GET {{baseUrl}}/purchase-orders/{{poId}} HTTP/1.1
+Authorization: Bearer {{managerToken}}
+
+### ============================================================
+### STOK OPNAME (AUDIT FISIK & PENYESUAIAN KERUGIAN)
+### ============================================================
+
+### 13. Cek Status Pengingat Jadwal Stok Opname
+GET {{baseUrl}}/stock-opname/reminders HTTP/1.1
+Authorization: Bearer {{managerToken}}
+
+### 14. Buat Sesi Stok Opname Baru (Penyesuaian Fisik & Auto Expense)
+# @name createOpname
+POST {{baseUrl}}/stock-opname/sessions HTTP/1.1
+Authorization: Bearer {{managerToken}}
+Content-Type: {{contentType}}
+
+{
+  "cadence": "monthly",
+  "scope": "all",
+  "notes": "Audit stok berkala akhir bulan",
+  "items": [
+    {
+      "item_id": "{{firstMaterialId}}",
+      "item_type": "raw_material",
+      "physical_stock": 33.5,
+      "reason": "calibration",
+      "notes": "Selisih gramasi kalibrasi harian mesin grinder espresso"
+    }
+  ]
+}
+
+@sessionId = {{createOpname.response.body.data.id}}
+
+### 15. Cek Detail Sesi Stok Opname
+GET {{baseUrl}}/stock-opname/sessions/{{sessionId}} HTTP/1.1
+Authorization: Bearer {{managerToken}}
+
+### ============================================================
+### KEUANGAN & LAPORAN
+### ============================================================
+
+### 16. Daftar Pengeluaran (Expenses)
+GET {{baseUrl}}/expenses?page=1&limit=10 HTTP/1.1
+Authorization: Bearer {{managerToken}}
+
+### 17. Laporan Ringkasan Penjualan (Sales Summary)
+GET {{baseUrl}}/reports/sales-summary HTTP/1.1
+Authorization: Bearer {{managerToken}}
+
+### 18. Laporan Produk Terlaris (Best Sellers)
+GET {{baseUrl}}/reports/best-sellers?limit=5 HTTP/1.1
+Authorization: Bearer {{managerToken}}
+
+### 19. Laporan Laba Rugi (Profit & Loss)
+GET {{baseUrl}}/reports/profit-loss HTTP/1.1
+Authorization: Bearer {{managerToken}}
+
+### 20. Laporan Arus Kas (Cashflow Kas / Bank)
+GET {{baseUrl}}/reports/cashflow HTTP/1.1
+Authorization: Bearer {{managerToken}}
