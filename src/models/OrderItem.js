@@ -33,6 +33,10 @@ const OrderItem = sequelize.define(
       type: DataTypes.STRING(255),
       allowNull: true,
     },
+    modifiers_summary: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
   },
   {
     tableName: 'order_items',

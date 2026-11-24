@@ -12,6 +12,7 @@ const RawMaterial = require('./RawMaterial');
 // Domain 2: Kasir & Transaksi
 const OrderTransaction = require('./OrderTransaction');
 const OrderItem = require('./OrderItem');
+const CustomerMember = require('./CustomerMember');
 
 // Domain 3: Pengadaan
 const PurchaseOrder = require('./PurchaseOrder');
@@ -112,6 +113,20 @@ OrderItem.belongsTo(OrderTransaction, {
   as: 'order',
 });
 
+// 6b. CustomerMembers 1:N OrderTransactions
+CustomerMember.hasMany(OrderTransaction, {
+  foreignKey: 'customer_phone',
+  sourceKey: 'phone',
+  as: 'orders',
+  constraints: false,
+});
+OrderTransaction.belongsTo(CustomerMember, {
+  foreignKey: 'customer_phone',
+  targetKey: 'phone',
+  as: 'member',
+  constraints: false,
+});
+
 Product.hasMany(OrderItem, {
   foreignKey: 'product_id',
   as: 'order_items',
@@ -182,6 +197,7 @@ module.exports = {
   Product,
   OrderTransaction,
   OrderItem,
+  CustomerMember,
   PurchaseOrder,
   PurchaseOrderItem,
   StockOpnameSession,

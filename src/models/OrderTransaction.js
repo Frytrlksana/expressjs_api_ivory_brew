@@ -35,6 +35,10 @@ const OrderTransaction = sequelize.define(
       type: DataTypes.STRING(100),
       allowNull: true,
     },
+    customer_phone: {
+      type: DataTypes.STRING(30),
+      allowNull: true,
+    },
     subtotal: {
       type: DataTypes.DECIMAL(12, 2),
       allowNull: false,

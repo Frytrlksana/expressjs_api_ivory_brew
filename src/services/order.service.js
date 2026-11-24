@@ -83,6 +83,7 @@ const checkoutOrder = async (orderData, user) => {
         unit_price: unitPrice,
         cost_price: costPrice,
         notes: itemInput.notes || null,
+        modifiers_summary: itemInput.modifiers_summary || null,
       });
 
       // Logika pengurangan stok
@@ -191,6 +192,7 @@ const checkoutOrder = async (orderData, user) => {
         order_type: orderData.order_type,
         table_number: orderData.table_number || null,
         customer_name: orderData.customer_name || null,
+        customer_phone: orderData.customer_phone || null,
         subtotal,
         tax,
         discount,
@@ -208,6 +210,22 @@ const checkoutOrder = async (orderData, user) => {
       item.order_id = order.id;
     }
     await OrderItem.bulkCreate(orderItemsToCreate, { transaction: t });
+
+    // 12. Otomatisasi Loyalty & Stamp Member jika ada customer_phone
+    if (orderData.customer_phone) {
+      try {
+        const memberService = require('./member.service');
+        await memberService.processOrderLoyalty(
+          orderData.customer_phone,
+          orderData.customer_name,
+          orderData.items,
+          productMap,
+          t
+        );
+      } catch (memErr) {
+        console.warn('[OrderService] Warning auto-loyalty stamp:', memErr.message);
+      }
+    }
 
     // Kembalikan order lengkap
     return getOrderById(order.id, t);

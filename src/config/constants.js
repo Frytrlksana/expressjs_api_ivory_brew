@@ -44,11 +44,11 @@ module.exports = {
     RAW_MATERIAL: 'raw_material',
     PRODUCT: 'product',
   },
-  ALLOWED_ROUTES: ['/', '/pos', '/purchasing', '/finance', '/settings'],
+  ALLOWED_ROUTES: ['/', '/pos', '/purchasing', '/finance', '/settings', '/members'],
   DEFAULT_ROLE_PERMISSIONS: {
-    manager: ['/', '/pos', '/purchasing', '/finance', '/settings'],
-    barista: ['/pos'],
+    manager: ['/', '/pos', '/purchasing', '/finance', '/settings', '/members'],
+    barista: ['/pos', '/members'],
     finance: ['/purchasing', '/finance'],
-    supervisor: ['/pos', '/purchasing'],
+    supervisor: ['/pos', '/purchasing', '/members'],
   },
 };
